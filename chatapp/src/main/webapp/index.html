@@ -3,10 +3,15 @@
     <head>
         <title>Start Page</title>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+        <script src ="websocket.js"></script>
+        <link rel="stylesheet" type="text/css" href="style.css">
     </head>
     <body>
-        <h1>Hello World!</h1><textarea name="text" rows="4" cols="20" readonly="readonly">
-        </textarea>
-        <input type="submit" value="login" name="login" />
+        <h1>Hello World!</h1>
+        <textarea id="allMessages"></textarea>
+        <input id="test" type="text" value="" />
+        <input type="text" id="messageToSend" value="" />
+        <input type="submit" value="send" onclick="sendMessage()" name="send" />
+        <input type="submit" value="login" onclick="login()" />
     </body>
 </html>
