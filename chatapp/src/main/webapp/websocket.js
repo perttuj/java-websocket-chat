@@ -31,18 +31,13 @@ function onMessage(event) {
     setStatus("onMessage");
     var action = JSON.parse(event.data);
     if (action.action === "send") {
-        printMessage(action);
+        appendMessage(action);
     }
 }
 
-function printMessage(action) {
+function appendMessage(action) {
     var elem = document.getElementById("allMessages");
-    elem.innerHTML += action.message;
-}
-
-function message(message) {
-    console.log("message received");
-    document.getElementById("allMessages").value += message;
+    elem.innerHTML += "&#013;&#010;" + action.message;
 }
 
 function init() {
