@@ -59,6 +59,10 @@ public class WebSocketServer {
                     break;
                 case "register":
                     sessionHandler.registerUser(session, jsonMessage);
+                    break;
+                case "rooms":
+                    sessionHandler.getRooms(session);
+                    break;
                 default:
                     JsonObject msg = Json.createObjectBuilder()
                             .add("action", "response")

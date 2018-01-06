@@ -18,7 +18,11 @@ function sendMessage() {
         action: "send",
         message: msg
     };
+    document.getElementById("messageToSend").value = null;
     socket.send(JSON.stringify(messageToSend));
+}
+function joinChat() {
+    
 }
 function register() {
     setStatus("registering");
@@ -29,6 +33,8 @@ function register() {
         username: user,
         password: pass
     };
+    document.getElementById("reguser").value = null;
+    document.getElementById("regpass").value = null;
     socket.send(JSON.stringify(command));
 }
 function login() {
@@ -40,13 +46,32 @@ function login() {
         username: usr,
         password: pwd
     };
+    document.getElementById("loginuser").value = null;
+    document.getElementById("loginpass").value = null;
     socket.send(JSON.stringify(credentials));
+}
+function displayLists(lists) {
+    var rooms = lists.roomsarray;
+    var list = "";
+    setStatus("displaying list");
+    for (var i = 0; i < rooms.length; i++) {
+        list += "<option>" + rooms[i] + "</option>";
+    }
+    document.getElementById("list").innerHTML = list;
+}
+function getRooms() {
+    var request = {
+        action: "rooms"
+    };
+    socket.send(JSON.stringify(request));
 }
 function onMessage(event) {
     setStatus("onMessage");
     var action = JSON.parse(event.data);
     if (action.action === "response") {
         appendMessage(action);
+    } else if (action.action === "rooms") {
+        displayLists(action);
     }
 }
 

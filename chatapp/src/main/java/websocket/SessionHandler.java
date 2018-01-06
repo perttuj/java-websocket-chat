@@ -7,17 +7,21 @@ package websocket;
 
 import controller.Controller;
 import java.io.IOException;
-import java.time.LocalTime;
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.websocket.Session;
 import model.Chatter;
+
+import javax.json.JsonArray;
+import javax.json.JsonArrayBuilder;
 
 /**
  *
@@ -29,12 +33,38 @@ public class SessionHandler {
     @Inject
     private Controller dao;
 
+    // 1-1 mapping
+    private final Map<Chatter, Session> userSessions = new HashMap<>();
+    private final Map<Session, Chatter> sessionUsers = new HashMap<>();
+    
+    private final Map<String, Set<Session>> chatRooms = new HashMap<>();
     private final Set<Session> sessions = new HashSet<>();
-    private final Map<Session, Chatter> users = new HashMap<>();
-
+    
+    @PostConstruct
+    void init() {
+        chatRooms.put("home", new HashSet<Session>());
+        chatRooms.put("english", new HashSet<Session>());
+    }
+    public void getRooms(Session session) {
+        Set<String> rooms = chatRooms.keySet();
+        Set<Session> activeClients = sessionUsers.keySet();
+        JsonArrayBuilder jsonarray = Json.createArrayBuilder();
+        for(String s : rooms) {
+            jsonarray.add(s);
+        }
+        for (Session s : activeClients) {
+            if (session == s) continue;
+            jsonarray.add(sessionUsers.get(s).getName());
+        }
+        JsonArray arr = jsonarray.build();
+        JsonObject obj = Json.createObjectBuilder()
+                .add("action", "rooms")
+                .add("roomsarray", arr)
+                .build();
+        sendToSession(session, obj);
+    }
     public void addSession(Session session) {
         Chatter usr = new Chatter(String.valueOf("Guest" + ((int) (Math.random() * 1000))));
-        users.put(session, usr);
         JsonObject obj = Json.createObjectBuilder()
                 .add("action", "response")
                 .add("user", "SERVER")
@@ -45,16 +75,22 @@ public class SessionHandler {
                 .add("user", "SERVER")
                 .add("message", "user joined: " + usr.getName())
                 .build();
+        sessionUsers.put(session, usr);
+        userSessions.put(usr, session);
         sendToSession(session, obj);
         sendToAllSessions(newuser);
         sessions.add(session);
+        chatRooms.get("home").add(session);
+        for (Session s : sessions) {
+            getRooms(s);
+        }
     }
 
     public void removeSession(Session session) {
         JsonObject msg = Json.createObjectBuilder()
                 .add("action", "response")
                 .add("user", "SERVER")
-                .add("message", "user left: " + users.get(session).getName())
+                .add("message", "user " + sessionUsers.get(session).getName() + " left")
                 .build();
         sessions.remove(session);
         removeUser(session);
@@ -65,26 +101,37 @@ public class SessionHandler {
         String username = message.getString("username");
         String password = message.getString("password");
         Chatter usr = dao.getUser(username);
-        boolean verified = false;
+        boolean verified = false, loggedIn = false;
         if (usr != null) {
             verified = usr.verify(password);
+            loggedIn = userSessions.get(usr) != null;
         }
         JsonObject msg;
-        if (!verified) {
+        if (!verified || loggedIn) {
+            String response = loggedIn ? "already logged in" : "verification failed";
             msg = Json.createObjectBuilder()
                     .add("action", "response")
                     .add("user", "SERVER")
-                    .add("message", "login failed")
+                    .add("message", "login failed - " + response)
                     .build();
+            sendToSession(session, msg);
         } else {
             msg = Json.createObjectBuilder()
                     .add("action", "response")
                     .add("user", "SERVER")
                     .add("message", "logged in as " + username)
                     .build();
+            JsonObject announcement = Json.createObjectBuilder()
+                    .add("action", "response")
+                    .add("user", "SERVER")
+                    .add("message", "" + sessionUsers.get(session).getName() + " is now known as " + username)
+                    .build();
+            sendToSession(session, msg);
+            sendToAllSessions(announcement);
+            userSessions.remove(sessionUsers.get(session));
+            sessionUsers.put(session, usr);
+            userSessions.put(usr, session);
         }
-        sendToSession(session, msg);
-        users.put(session, usr);
     }
 
     public void registerUser(Session session, JsonObject message) {
@@ -102,7 +149,7 @@ public class SessionHandler {
                     .build();
         } else {
             user = new Chatter(username, password);
-            users.put(session, user);
+            sessionUsers.put(session, user);
             msg = Json.createObjectBuilder()
                     .add("action", "response")
                     .add("user", "SERVER")
@@ -114,13 +161,14 @@ public class SessionHandler {
     }
 
     public void removeUser(Session user) {
-        users.remove(user);
+        userSessions.remove(sessionUsers.get(user));
+        sessionUsers.remove(user);
     }
 
     public void sendMessage(Session session, JsonObject message) {
         JsonObject msg = Json.createObjectBuilder()
                 .add("action", "response")
-                .add("user", users.get(session).getName())
+                .add("user", sessionUsers.get(session).getName())
                 .add("message", message.get("message"))
                 .build();
         sendToAllSessions(msg);
@@ -130,15 +178,6 @@ public class SessionHandler {
         for (Session s : sessions) {
             sendToSession(s, message);
         }
-    }
-
-    private String getTime() {
-        LocalTime time = LocalTime.now();
-        String s
-                = time.getHour() + ":"
-                + time.getMinute() + ":"
-                + time.getSecond() + " ";
-        return s;
     }
 
     public void sendToSession(Session session, JsonObject message) {
