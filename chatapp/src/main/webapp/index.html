@@ -3,16 +3,31 @@
     <head>
         <title>Start Page</title>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-        <script src ="websocket.js"></script>
         <link rel="stylesheet" type="text/css" href="style.css">
+        <script src ="websocket.js"></script>
     </head>
     <body>
-        <h1>Hello World!</h1>
-        <textarea id="allMessages">hello
-hello</textarea>
+        <div id ="head">
+            <textarea id="allMessages"></textarea>
+        </div>
+        <div id="output">
         <input id="test" type="text" value="" />
+        </div>
         <input type="text" id="messageToSend" value="" />
         <input type="submit" value="send" onclick="sendMessage()" name="send" />
-        <input type="submit" value="login" onclick="login()" />
+        <div id="login">
+            <p>username, password</p>
+            <input id="loginuser" type="text" value="" />
+            <input id="loginpass" type="text" value="" />
+            <input type="submit" value="login" onclick="login()" />
+        </div>
+        
+        <div id="register">
+            <p>username, password</p>
+            <input id="reguser" type="text" value="" />
+            <input id="regpass" type="text" value="" />
+            <input type="submit" value="register" onclick="register()" />
+        </div>
+        
     </body>
 </html>

@@ -17,7 +17,6 @@ import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
-import model.User;
 
 /**
  *
@@ -42,24 +41,33 @@ public class WebSocketServer {
     }
     @OnMessage
     public void handleMessage(String message, Session session) {
-        
         try (JsonReader reader = Json.createReader(new StringReader(message))) {
             JsonObject jsonMessage = reader.readObject();
             String action = jsonMessage.getString("action");
-            if (action.equals("add")) {
-                // add user
-                User user = new User(); 
-                user.setName(String.valueOf(Math.random() * 10));
-                sessionHandler.addUser(user);
+            switch (action) {
+                case "login":
+                    sessionHandler.loginUser(session, jsonMessage);
+                    break;
+                case "logout":
+                    sessionHandler.removeUser(session);
+                    break;
+                case "send":
+                    sessionHandler.sendMessage(session, jsonMessage);
+                    break;
+                case "remove":
+                    sessionHandler.removeSession(session);
+                    break;
+                case "register":
+                    sessionHandler.registerUser(session, jsonMessage);
+                default:
+                    JsonObject msg = Json.createObjectBuilder()
+                            .add("action", "response")
+                            .add("user", "SERVER")
+                            .add("message", "ACTION NOT SUPPORTED")
+                            .build();
+                    sessionHandler.sendToSession(session, msg);
+                    break;
             }
-            if (action.equals("send")) {
-                // send msg
-                sessionHandler.sendToAllSessions(jsonMessage);
-            }
-            if (action.equals("remove")) {
-                // remove user
-            }
-            
         }
     }
 }
