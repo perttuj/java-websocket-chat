@@ -4,11 +4,21 @@
  * and open the template in the editor.
  */
 window.onload = init;
-var socket = new WebSocket("ws://localhost:8080/chatapp/actions");
-socket.onmessage = onMessage;
+var websocket = new WebSocket("ws://localhost:8080/chatapp/actions");
+websocket.onmessage = onMessage;
+websocket.onclose = onClose;
+websocket.onopen = onOpen;
 
 function setStatus(status) {
     document.getElementById("test").value = status;
+}
+
+function onOpen() {
+    document.getElementById("allMessages").value += "Connected to server"
+}
+
+function onClose(event) {
+    document.getElementById("allMessages").value = "Error - connection closed, error code: " + event.code;
 }
 
 function sendMessage() {
@@ -19,10 +29,17 @@ function sendMessage() {
         message: msg
     };
     document.getElementById("messageToSend").value = null;
-    socket.send(JSON.stringify(messageToSend));
+    websocket.send(JSON.stringify(messageToSend));
 }
 function joinChat() {
-    
+    var list = document.getElementById("list");
+    var room = list.options[list.selectedIndex].text;
+    var command = {
+        action: "switchRoom",
+        room: room
+    }
+    setStatus(room);
+    websocket.send(JSON.stringify(command));
 }
 function register() {
     setStatus("registering");
@@ -35,7 +52,7 @@ function register() {
     };
     document.getElementById("reguser").value = null;
     document.getElementById("regpass").value = null;
-    socket.send(JSON.stringify(command));
+    websocket.send(JSON.stringify(command));
 }
 function login() {
     setStatus("logging in");
@@ -48,7 +65,7 @@ function login() {
     };
     document.getElementById("loginuser").value = null;
     document.getElementById("loginpass").value = null;
-    socket.send(JSON.stringify(credentials));
+    websocket.send(JSON.stringify(credentials));
 }
 function displayLists(lists) {
     var rooms = lists.roomsarray;
@@ -63,7 +80,7 @@ function getRooms() {
     var request = {
         action: "rooms"
     };
-    socket.send(JSON.stringify(request));
+    websocket.send(JSON.stringify(request));
 }
 function onMessage(event) {
     setStatus("onMessage");
@@ -81,7 +98,12 @@ function getTime() {
 }
 
 function appendMessage(action) {
-    var elem = document.getElementById("allMessages");
+    var elem;
+    if (action.user === "SERVER") {
+        elem = document.getElementById("serverMessages");
+    } else {
+        elem = document.getElementById("allMessages");
+    }
     elem.value += "\n" + action.user + " - " + action.message;
 }
 

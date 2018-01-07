@@ -5,6 +5,7 @@
  */
 package model;
 
+import java.io.Serializable;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
@@ -13,10 +14,11 @@ import javax.persistence.Id;
  * @author Perttu.Jaaskelainen
  */
 @Entity
-public class Chatter {
+public class Chatter implements Serializable {
     @Id
     private String username;
     private String password;
+    private String room = null;
     
     public Chatter() {
         
@@ -30,6 +32,12 @@ public class Chatter {
     public Chatter(String name, String pass) {
         this.username = name;
         this.password = pass;
+    }
+    public void setRoom(String room) {
+        this.room = room;
+    }
+    public String getRoom() {
+        return this.room;
     }
     public String getName() {
         return this.username;

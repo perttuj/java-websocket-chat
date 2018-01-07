@@ -5,18 +5,21 @@
  */
 package integration;
 
+import java.util.List;
 import javax.ejb.Stateless;
 import javax.ejb.TransactionAttribute;
 import javax.ejb.TransactionAttributeType;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
+import javax.persistence.Query;
+import model.ChatRoom;
 import model.Chatter;
 
 /**
  *
  * @author Perttu Jääskeläinen
  */
-@TransactionAttribute(TransactionAttributeType.MANDATORY)
+@TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
 @Stateless
 public class ChatDAO {
     @PersistenceContext(unitName = "chatPU")
@@ -29,7 +32,18 @@ public class ChatDAO {
         manager.persist(user);
         return true;
     }
+    public boolean addRoom(ChatRoom room) {
+        if (manager.find(ChatRoom.class, room.getName()) != null) {
+            return false;
+        }
+        manager.persist(room);
+        return true;
+    }
     public Chatter getUser(Object PrimaryKey) {
         return manager.find(Chatter.class, PrimaryKey);
+    }
+    public List<String> getRooms() {
+        Query query = manager.createQuery("SELECT r.roomName FROM ChatRoom r");
+        return query.getResultList(); 
     }
 }

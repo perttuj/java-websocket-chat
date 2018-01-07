@@ -6,17 +6,16 @@
 package controller;
 
 import integration.ChatDAO;
+import java.util.List;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
-import javax.ejb.TransactionAttribute;
-import javax.ejb.TransactionAttributeType;
+import model.ChatRoom;
 import model.Chatter;
 
 /**
  *
  * @author Perttu Jääskeläinen
  */
-@TransactionAttribute(TransactionAttributeType.REQUIRES_NEW)
 @Stateless
 public class Controller {
     @EJB
@@ -28,5 +27,10 @@ public class Controller {
     public Chatter getUser(Object PrimaryKey) {
         return dao.getUser(PrimaryKey);
     }
-    
+    public List<String> getRooms() {
+        return dao.getRooms();
+    }
+    public boolean addRoom(ChatRoom room) {
+        return dao.addRoom(room);
+    }
 }

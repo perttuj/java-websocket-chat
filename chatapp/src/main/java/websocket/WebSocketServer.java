@@ -42,26 +42,29 @@ public class WebSocketServer {
     @OnMessage
     public void handleMessage(String message, Session session) {
         try (JsonReader reader = Json.createReader(new StringReader(message))) {
-            JsonObject jsonMessage = reader.readObject();
-            String action = jsonMessage.getString("action");
+            JsonObject jsonObject = reader.readObject();
+            String action = jsonObject.getString("action");
             switch (action) {
                 case "login":
-                    sessionHandler.loginUser(session, jsonMessage);
+                    sessionHandler.loginUser(session, jsonObject);
                     break;
                 case "logout":
                     sessionHandler.removeUser(session);
                     break;
                 case "send":
-                    sessionHandler.sendMessage(session, jsonMessage);
+                    sessionHandler.sendMessage(session, jsonObject);
                     break;
                 case "remove":
                     sessionHandler.removeSession(session);
                     break;
                 case "register":
-                    sessionHandler.registerUser(session, jsonMessage);
+                    sessionHandler.registerUser(session, jsonObject);
                     break;
                 case "rooms":
                     sessionHandler.getRooms(session);
+                    break;
+                case "switchRoom":
+                    sessionHandler.switchRoom(session, jsonObject);
                     break;
                 default:
                     JsonObject msg = Json.createObjectBuilder()
