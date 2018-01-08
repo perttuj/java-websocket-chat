@@ -13,7 +13,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
 import model.ChatRoom;
-import model.Chatter;
+import model.RegisteredChatter;
 
 /**
  *
@@ -25,8 +25,8 @@ public class ChatDAO {
     @PersistenceContext(unitName = "chatPU")
     private EntityManager manager;
     
-    public boolean addUser(Chatter user) {
-        if (manager.find(Chatter.class, user.getName()) != null) {
+    public boolean addUser(RegisteredChatter user) {
+        if (manager.find(RegisteredChatter.class, user.getName()) != null) {
             return false;
         }
         manager.persist(user);
@@ -39,8 +39,8 @@ public class ChatDAO {
         manager.persist(room);
         return true;
     }
-    public Chatter getUser(Object PrimaryKey) {
-        return manager.find(Chatter.class, PrimaryKey);
+    public RegisteredChatter getUser(Object PrimaryKey) {
+        return manager.find(RegisteredChatter.class, PrimaryKey);
     }
     public List<String> getRooms() {
         Query query = manager.createQuery("SELECT r.roomName FROM ChatRoom r");

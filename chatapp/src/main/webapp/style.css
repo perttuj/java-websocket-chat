@@ -8,10 +8,10 @@ and open the template in the editor.
     Author     : Perttu.Jaaskelainen
 */
 textarea {
-    width: 300px;
+    width: 500px;
     height: 150px;
 }
 #serverMessages {
     height: 70px;
-    width: 300px;
+    width: 500px;
 }

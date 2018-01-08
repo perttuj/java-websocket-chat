@@ -11,35 +11,34 @@
             <div id="servermessages">
                 <p>Server messages</p>
                 <textarea id="serverMessages"></textarea>
+                <p>Server responses</p>
+                <input id="test" type="text" value="" />
             </div>
             <div id="chatroom">
-            <p>Chatroom messages</p>
+            <p id="currentRoom"></p>
             <textarea id="allMessages"></textarea>
             </div>
         </div>
-        <div id="output">
-            <p>Server responses</p>
-            <input id="test" type="text" value="" />
-        </div>
         <input type="text" id="messageToSend" value="" />
         <input type="submit" value="send" onclick="sendMessage()" name="send" />
+        <div id="forms">
+            <p>Login</p>
+                    <input id="loginuser" type="text" value="" /></br>
+                    <input id="loginpass" type="text" value="" />
+                    <input type="submit" value="login" onclick="login()" />
+                    <p>Register</p>
+                    <input id="reguser" type="text" value="" /></br>
+                    <input id="regpass" type="text" value="" />
+                    <input type="submit" value="register" onclick="register()" />
+        </div>
         <div id="chatrooms">
-            <p>Available rooms and chats</p>
+            <p>Rooms</p>
             <select id="list"></select>
-            <input type="submit" value="join chat" onclick="joinChat()" />
-            <input type="submit" value="reload" onclick="getRooms()" />
-        </div>
-        <div id="login">
-            <p>username, password</p>
-            <input id="loginuser" type="text" value="" /></br>
-            <input id="loginpass" type="text" value="" />
-            <input type="submit" value="login" onclick="login()" />
-        </div>
-        <div id="register">
-            <p>username, password</p>
-            <input id="reguser" type="text" value="" /></br>
-            <input id="regpass" type="text" value="" />
-            <input type="submit" value="register" onclick="register()" />
+            <input type="submit" value="join chat" onclick="joinChat()" /></br>
+            <p>Users:</p>
+            <select id="chatroomParticipants"></select>
+            <input type="submit" value="chat to user" /></br></br>
+            <input type="submit" value="reload rooms and users" onclick="reload()" />
         </div>
         
     </body>

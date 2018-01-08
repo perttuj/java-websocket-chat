@@ -10,7 +10,7 @@ import java.util.List;
 import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import model.ChatRoom;
-import model.Chatter;
+import model.RegisteredChatter;
 
 /**
  *
@@ -21,10 +21,10 @@ public class Controller {
     @EJB
     ChatDAO dao;
     
-    public boolean addUser(Chatter user) {
+    public boolean addUser(RegisteredChatter user) {
         return dao.addUser(user);
     }
-    public Chatter getUser(Object PrimaryKey) {
+    public RegisteredChatter getUser(Object PrimaryKey) {
         return dao.getUser(PrimaryKey);
     }
     public List<String> getRooms() {

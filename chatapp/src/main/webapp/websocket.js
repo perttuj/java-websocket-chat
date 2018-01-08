@@ -1,9 +1,3 @@
-/* 
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-window.onload = init;
 var websocket = new WebSocket("ws://localhost:8080/chatapp/actions");
 websocket.onmessage = onMessage;
 websocket.onclose = onClose;
@@ -76,11 +70,28 @@ function displayLists(lists) {
     }
     document.getElementById("list").innerHTML = list;
 }
-function getRooms() {
+function reload() {
     var request = {
-        action: "rooms"
+        action: "reload"
     };
     websocket.send(JSON.stringify(request));
+}
+function connected (event) {
+    var elem = document.getElementById("currentRoom");
+    var elem2 = document.getElementById("serverMessages");
+    elem.innerHTML = "Current chatroom: '" + event.room + "'";
+    elem2.value += "\n" + "SERVER - " + event.message;
+}
+function displayUsers(event) {
+    var list = "";
+    var array = event.users;
+    for (var i = 0; i < array.length; i++) {
+        list += "<option>" + array[i] + "</option";
+    }
+    if (array.length === 0) {
+        list = "<option>Empty</option>";
+    }
+    document.getElementById("chatroomParticipants").innerHTML = list;
 }
 function onMessage(event) {
     setStatus("onMessage");
@@ -89,12 +100,11 @@ function onMessage(event) {
         appendMessage(action);
     } else if (action.action === "rooms") {
         displayLists(action);
+    } else if (action.action === "connected") {
+        connected(action);
+    } else if (action.action === "users") {
+        displayUsers(action);
     }
-}
-
-function getTime() {
-    var d = new Date();
-    return d.getHours() + ":" + d.getMinutes() + ":" + d.getSeconds() + " ";
 }
 
 function appendMessage(action) {
@@ -105,9 +115,5 @@ function appendMessage(action) {
         elem = document.getElementById("allMessages");
     }
     elem.value += "\n" + action.user + " - " + action.message;
-}
-
-function init() {
-    
 }
 

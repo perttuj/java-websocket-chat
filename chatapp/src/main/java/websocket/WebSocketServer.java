@@ -49,7 +49,7 @@ public class WebSocketServer {
                     sessionHandler.loginUser(session, jsonObject);
                     break;
                 case "logout":
-                    sessionHandler.removeUser(session);
+                    // TODO
                     break;
                 case "send":
                     sessionHandler.sendMessage(session, jsonObject);
@@ -60,8 +60,8 @@ public class WebSocketServer {
                 case "register":
                     sessionHandler.registerUser(session, jsonObject);
                     break;
-                case "rooms":
-                    sessionHandler.getRooms(session);
+                case "reload":
+                    sessionHandler.reload(session);
                     break;
                 case "switchRoom":
                     sessionHandler.switchRoom(session, jsonObject);
