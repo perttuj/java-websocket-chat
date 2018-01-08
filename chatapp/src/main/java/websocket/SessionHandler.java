@@ -28,7 +28,8 @@ import model.Chatter;
 import model.GuestChatter;
 
 /**
- *
+ *  Session handler class for a chat application,
+ * controlling all communcation and messaging
  * @author Perttu.Jaaskelainen
  */
 @ApplicationScoped
@@ -39,44 +40,86 @@ public class SessionHandler {
     
     private final String DEFAULT_CHATROOM = "home";
 
-    // 1-1 mapping, avoiding double storage of RegisteredChatter- objects, instead
-    // mapping an ID to each thisUser
+    // 1-1 mapping between sessions and ID's
     private final Map<Session, Long> sessionUserID    = new HashMap<>();
-    private final Map<Session, GuestChatter> guests = new HashMap<>();
     private final Map<Long, Session> userIDSession = new HashMap<>();
+    
+    private final Map<Session, GuestChatter> guests = new HashMap<>();
     private final Map<Long, RegisteredChatter> registeredUsers = new HashMap<>();
     
     // Hashmap of all active chatrooms, containing a set of active sessions
     private final Map<String, Set<Session>> chatRooms = new HashMap<>();
     private final Set<Session> sessions = new HashSet<>();
     
+    // initiate the program, get all active rooms from the database
+    // while ensuring that atleast 2 rooms exist
     @PostConstruct
     void init() {
         controller.addRoom(new ChatRoom(DEFAULT_CHATROOM));
-        controller.addRoom(new ChatRoom("TEST"));
+        controller.addRoom(new ChatRoom("english"));
         List<String> rooms = controller.getRooms();
         for (String s : rooms) {
             chatRooms.put(s, new HashSet<Session>());
         } 
-        /*
-        chatRooms.put("home", new HashSet<Session>());
-        chatRooms.put("english", new HashSet<Session>()); */
     }
+    /**
+     * Get a object builder for a server response to a single user
+     * @return  a new object builder
+     */
     private JsonObjectBuilder newServerResponseBuilder() {
         JsonObjectBuilder builder = Json.createObjectBuilder();
-        builder.add("action", "response");
-        builder.add("user", "SERVER");
+        builder.add("action", "server");
         return builder;
     }
+    /**
+     * Get a object builder for information when connecting
+     * @return  a new object builder
+     */
     private JsonObjectBuilder newServerConnectedBuilder() {
         JsonObjectBuilder builder = Json.createObjectBuilder();
         builder.add("action", "connected");
         return builder;
     }
+    /**
+     * Get a object builder for server announcements
+     * @return  a new object builder
+     */
+    private JsonObjectBuilder newServerAnnouncementBuilder() {
+        JsonObjectBuilder builder = Json.createObjectBuilder();
+        builder.add("action", "announcement");
+        return builder;
+    }
+    /**
+     * Get a object builder for information when switching rooms
+     * @return  a new object builder
+     */
+    private JsonObjectBuilder newSwitchRoomBuilder() {
+        JsonObjectBuilder builder = Json.createObjectBuilder();
+        builder.add("action", "roomSwitch");
+        return builder;
+    }
+    /**
+     * Get a object builder for receiving information about the user
+     * @return  a new object builder
+     */
+    private JsonObjectBuilder newUserInfoBuilder() {
+        JsonObjectBuilder builder = Json.createObjectBuilder();
+        builder.add("action", "userInfo");
+        return builder;
+    }
+    /**
+     * Called when a session wants to reload all sessions and users
+     * @param session   session that wants to reload
+     */
     public void reload(Session session) {
         getRooms(session);
         getUsers(session);
     }
+    /**
+     * Gets a list of all active, registered users
+     * @param session   the session to be sent an update about all active
+     *                  users and rooms
+     */
     private void getUsers(Session session) {
         Set<Long> set = registeredUsers.keySet();
         JsonArrayBuilder jsonarray = Json.createArrayBuilder();
@@ -110,7 +153,7 @@ public class SessionHandler {
         JsonObjectBuilder builder = newServerResponseBuilder();
         Long LongID = sessionUserID.get(session);
         if (LongID == null) {
-            builder.add("message", "unregistered users cannot switch rooms");
+            builder.add("message", "ERROR - unregistered users cannot switch rooms");
             sendToSession(session, builder.build());
             return;
         }
@@ -123,7 +166,6 @@ public class SessionHandler {
             builder.add("message", "already chatting in room " + newRoom);
             sendToSession(session, builder.build());
             return;
-            
         }
         Set<Session> chattersInRoom = chatRooms.get(room);
         chattersInRoom.remove(session);
@@ -133,14 +175,15 @@ public class SessionHandler {
         // 2, to the registeredUsers in the previous room
         // 3, to the registeredUsers in the new room OR 
         //   the notified thisUser when creating a new room
-        
-        JsonObjectBuilder builder2 = newServerResponseBuilder();
-        JsonObjectBuilder builder3 = newServerResponseBuilder();
+        builder = newSwitchRoomBuilder();
+        JsonObjectBuilder builder2 = newServerAnnouncementBuilder();
+        JsonObjectBuilder builder3 = newServerAnnouncementBuilder();
         
         // if room exists, send messages to affected rooms
         if (chatRooms.containsKey(newRoom)) {
             thisUser.setRoom(newRoom);
             
+            builder.add("room", newRoom);
             builder.add("message", "joined room '" + newRoom + "'");
             builder2.add("message", "user '" + thisUser.getName() + "' switched rooms");
             builder3.add("message", "user '" + thisUser.getName() + "' joined the room");
@@ -166,16 +209,18 @@ public class SessionHandler {
                 int roomNumber = (int) (Math.random() * 1000);
                 nextRoom = "Room" + roomNumber;
             } while (chatRooms.get(nextRoom) != null);
-            
+            thisUser.setRoom(nextRoom);
             ChatRoom nRoom = new ChatRoom(nextRoom, thisUser.getName());
             controller.addRoom(nRoom);
             chatRooms.put(nextRoom, set);
             
+            builder.add("room", nextRoom);
             builder.add("message", "opened new room '" + nextRoom + "', user " + newRoom + " has been notified");
             builder2.add("message", "user " + thisUser.getName() + " switched rooms");
+            builder3 = newServerAnnouncementBuilder();
             builder3.add("message", "user " + thisUser.getName() + " has started a new room '" + nextRoom + "' and invited you");
             
-            thisUser.setRoom(newRoom);
+            
             sendToSession(session, builder.build());
             sendToRoom(room, builder2.build());
             long otherUserID = otherUser.getID();
@@ -189,10 +234,11 @@ public class SessionHandler {
     public void addSession(Session session) {
         GuestChatter guest = new GuestChatter(String.valueOf("Guest" + ((int) (Math.random() * 1000))), DEFAULT_CHATROOM);
         JsonObject obj = newServerConnectedBuilder()
-                .add("message", "Chatting in " + DEFAULT_CHATROOM + ", know as: " + guest.getName())
+                .add("message", "Chatting in " + DEFAULT_CHATROOM)
                 .add("room", DEFAULT_CHATROOM)
+                .add("user", guest.getName())
                 .build();
-        JsonObject newuser = newServerResponseBuilder()
+        JsonObject newuser = newServerAnnouncementBuilder()
                 .add("message", "'" + guest.getName() + "' joined")
                 .build();
         sendToSession(session, obj);
@@ -200,6 +246,8 @@ public class SessionHandler {
         sessions.add(session);
         guests.put(session, guest);
         chatRooms.get(DEFAULT_CHATROOM).add(session);
+        getRooms(session);
+        getUsers(session);
     }
     /**
      * Remove a session from the application, called when 
@@ -207,7 +255,7 @@ public class SessionHandler {
      * @param session   session that quit the application
      */
     public void removeSession(Session session) {
-        JsonObjectBuilder msg = newServerResponseBuilder();
+        JsonObjectBuilder msg = newServerAnnouncementBuilder();
         sessions.remove(session);
         Long ID = sessionUserID.get(session);
         Chatter user;
@@ -219,15 +267,19 @@ public class SessionHandler {
             sendToRoom(DEFAULT_CHATROOM, msg.build());
             return;
         }
+        
         user = registeredUsers.get(ID);
         String room = user.getRoom();
         chatRooms.get(room).remove(session);
         msg.add("message", "'" + user.getName()+ "' left");
+        sessionUserID.remove(session);
+        userIDSession.remove(ID);
+        registeredUsers.remove(ID);
         sendToRoom(room, msg.build());
     }
     
     /**
-     * Called by the WebSocketServer when a thisUser wants to login
+     * Called by the WebSocketServer when a user wants to login
      * @param session   the session that wants to login
      * @param message   JsonObject containing information, like credentials.
      */
@@ -257,8 +309,10 @@ public class SessionHandler {
             msg.add("message", "login failed - " + response);
             sendToSession(session, msg.build());
         } else {
+            msg = newUserInfoBuilder();
             msg.add("message", "logged in as " + username);
-            JsonObject announcement = newServerResponseBuilder()
+            msg.add("user", username);
+            JsonObject announcement = newServerAnnouncementBuilder()
                     .add("message", "'" + guest.getName() + "' is now known as '" + username + "'")
                     .build();
             sendToSession(session, msg.build());
@@ -271,7 +325,7 @@ public class SessionHandler {
         }
     }
     /**
-     * Called by the WebSocketServer when a thisUser wants to register a new thisUser
+     * Called by the WebSocketServer when a client wants to register a new user
      * @param session   the session that wants to register a new thisUser
      * @param message   information received from the thisUser, including credentials
      */
@@ -280,21 +334,17 @@ public class SessionHandler {
         String password = message.getString("password");
 
         RegisteredChatter user = controller.getUser(username);
-        JsonObject msg;
+        JsonObjectBuilder msg = newServerResponseBuilder();
 
         if (user != null) {
-            msg = newServerResponseBuilder()
-                .add("message", "user '" + username + "' already exists")
-                .build();
+            msg.add("message", "user '" + username + "' already exists");
         } else {
             user = new RegisteredChatter(username, password);
             user.setRoom(DEFAULT_CHATROOM);
-            msg = newServerResponseBuilder()
-                .add("message", "registered '" + username + "'")
-                .build();
+            msg.add("message", "registered '" + username + "'");
             controller.addUser(user);
         }
-        sendToSession(session, msg);
+        sendToSession(session, msg.build());
     }
 
     /**
@@ -352,10 +402,6 @@ public class SessionHandler {
      * @param message   Message to be sent to session
      */
     public void sendToSession(Session session, JsonObject message) {
-        try {
-            session.getBasicRemote().sendText(message.toString());
-        } catch (IOException e) {
-            removeSession(session);
-        }
+        session.getAsyncRemote().sendText(message.toString());
     }
 }

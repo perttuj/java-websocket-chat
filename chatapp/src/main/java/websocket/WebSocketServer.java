@@ -19,7 +19,7 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
 /**
- *
+ *  Class for handling initial contact with a user
  * @author Perttu Jääskeläinen
  */
 @ApplicationScoped
@@ -27,18 +27,37 @@ import javax.websocket.server.ServerEndpoint;
 public class WebSocketServer {
     @Inject
     private SessionHandler sessionHandler;
+    
+    /**
+     * Called when a user initiates a websocket connection
+     * @param session   session that opened a connection
+     */
     @OnOpen
     public void onOpen(Session session) {
         sessionHandler.addSession(session);
     }
+    /**
+     * Called when a users connection is closed
+     * @param session   session that is closed
+     */
     @OnClose
     public void onClose(Session session) {
         sessionHandler.removeSession(session);
     }
+    /**
+     * Called when a error occurs in the connection
+     * @param error error that happened
+     * @throws Exception    exception that is thrown
+     */
     @OnError
-    public void onError(Throwable error) {
-        
+    public void onError(Throwable error) throws Exception {
+        throw new Exception(error);
     }
+    /**
+     * Called when a user sends text through the socket
+     * @param message   the message that is received
+     * @param session   session that sent the message
+     */
     @OnMessage
     public void handleMessage(String message, Session session) {
         try (JsonReader reader = Json.createReader(new StringReader(message))) {
@@ -47,9 +66,6 @@ public class WebSocketServer {
             switch (action) {
                 case "login":
                     sessionHandler.loginUser(session, jsonObject);
-                    break;
-                case "logout":
-                    // TODO
                     break;
                 case "send":
                     sessionHandler.sendMessage(session, jsonObject);

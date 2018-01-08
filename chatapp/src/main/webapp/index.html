@@ -11,11 +11,11 @@
             <div id="servermessages">
                 <p>Server messages</p>
                 <textarea id="serverMessages"></textarea>
-                <p>Server responses</p>
-                <input id="test" type="text" value="" />
             </div>
+            <input type="submit" value="reconnect" onclick="reconnect()"/>
             <div id="chatroom">
             <p id="currentRoom"></p>
+            <p id="currentUser"></p>
             <textarea id="allMessages"></textarea>
             </div>
         </div>
@@ -37,7 +37,7 @@
             <input type="submit" value="join chat" onclick="joinChat()" /></br>
             <p>Users:</p>
             <select id="chatroomParticipants"></select>
-            <input type="submit" value="chat to user" /></br></br>
+            <input type="submit" value="chat to user" onclick="openChat()"/></br></br>
             <input type="submit" value="reload rooms and users" onclick="reload()" />
         </div>
         
